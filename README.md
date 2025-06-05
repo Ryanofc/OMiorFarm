@@ -1,103 +1,141 @@
--- GUI de Frutas com botão toggle para Delta
-local player = game:GetService("Players").LocalPlayer
-repeat wait() until player:FindFirstChild("PlayerGui")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local Eventos = ReplicatedStorage:WaitForChild("Eventos")
+local ComprarSemente = Eventos:WaitForChild("ComprarSemente")
+local VenderInventario = Eventos:WaitForChild("Vender"):WaitForChild("Vender inventário")
 
--- Criar GUI principal
-local gui = Instance.new("ScreenGui", player:WaitForChild("PlayerGui"))
-gui.Name = "FrutaGUI"
-gui.ResetOnSpawn = false
+local frutasDisponiveis = {
+    "Cenoura", "Mirtilo", "Laranjeira", "Caneta Azul",
+    "Marshmallow", "Pistache", "Mango", "Uva", "Cuscuz"
+}
 
--- Frame principal
-local mainFrame = Instance.new("Frame", gui)
-mainFrame.Size = UDim2.new(0, 260, 0, 300)
-mainFrame.Position = UDim2.new(0, 20, 0.3, 0)
-mainFrame.BackgroundColor3 = Color3.new(0, 0, 0)
-mainFrame.BackgroundTransparency = 0.3
+-- GUI
+local screenGui = Instance.new("ScreenGui", game.Players.LocalPlayer:WaitForChild("PlayerGui"))
+screenGui.Name = "FrutaGui"
+
+local mainFrame = Instance.new("Frame", screenGui)
+mainFrame.Size = UDim2.new(0, 300, 0, 250)
+mainFrame.Position = UDim2.new(0.5, -150, 0.5, -125)
+mainFrame.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
 mainFrame.BorderSizePixel = 0
-mainFrame.Visible = true
 
--- Título
-local titulo = Instance.new("TextLabel", mainFrame)
-titulo.Size = UDim2.new(1, 0, 0, 30)
-titulo.Text = "Frutas"
-titulo.TextColor3 = Color3.new(1, 1, 1)
-titulo.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
-titulo.Font = Enum.Font.GothamBold
-titulo.TextScaled = true
+-- Vender com switch visual
+local venderAtivo = false
 
--- Lista de frutas
-local frutas = {"Cajá", "Mirtilo", "Marshmallow", "Laranjeira", "Caneta Azul"}
-local frutaSelecionada = nil
+local switchContainer = Instance.new("Frame", mainFrame)
+switchContainer.Size = UDim2.new(0.5, -15, 0, 40)
+switchContainer.Position = UDim2.new(0, 10, 0, 10)
+switchContainer.BackgroundTransparency = 1
 
--- Frame com botões de frutas
-local dropFrame = Instance.new("Frame", mainFrame)
-dropFrame.Position = UDim2.new(0, 10, 0, 40)
-dropFrame.Size = UDim2.new(0, 240, 0, 140)
-dropFrame.BackgroundTransparency = 1
+local switchBase = Instance.new("Frame", switchContainer)
+switchBase.Size = UDim2.new(0, 60, 0, 25)
+switchBase.Position = UDim2.new(0, 0, 0.5, -12)
+switchBase.BackgroundColor3 = Color3.fromRGB(150, 150, 150)
+switchBase.BorderSizePixel = 0
+switchBase.Name = "SwitchBase"
+switchBase.ClipsDescendants = true
 
-for i, fruta in ipairs(frutas) do
-	local botao = Instance.new("TextButton", dropFrame)
-	botao.Size = UDim2.new(1, 0, 0, 25)
-	botao.Position = UDim2.new(0, 0, 0, (i - 1) * 28)
-	botao.Text = fruta
-	botao.BackgroundColor3 = Color3.fromRGB(100, 100, 100)
-	botao.TextColor3 = Color3.new(1, 1, 1)
-	botao.Font = Enum.Font.GothamBold
-	botao.TextScaled = true
-	botao.MouseButton1Click:Connect(function()
-		frutaSelecionada = fruta
-	end)
+local switchBall = Instance.new("Frame", switchBase)
+switchBall.Size = UDim2.new(0, 23, 0, 23)
+switchBall.Position = UDim2.new(0, 1, 0, 1)
+switchBall.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+switchBall.BorderSizePixel = 0
+switchBall.ZIndex = 3
+switchBall.Name = "SwitchBall"
+switchBall.AnchorPoint = Vector2.new(0, 0)
+switchBall.SizeConstraint = Enum.SizeConstraint.RelativeYY
+switchBall.ClipsDescendants = false
+
+local venderLabel = Instance.new("TextLabel", switchContainer)
+venderLabel.Size = UDim2.new(1, -70, 1, 0)
+venderLabel.Position = UDim2.new(0, 70, 0, 0)
+venderLabel.BackgroundTransparency = 1
+venderLabel.Text = "Vender: OFF"
+venderLabel.TextColor3 = Color3.new(1,1,1)
+venderLabel.TextScaled = true
+venderLabel.Font = Enum.Font.Gotham
+
+local function atualizarSwitch()
+	if venderAtivo then
+		switchBase.BackgroundColor3 = Color3.fromRGB(80, 255, 80)
+		switchBall:TweenPosition(UDim2.new(1, -24, 0, 1), "Out", "Quad", 0.2, true)
+		venderLabel.Text = "Vender: ON"
+	else
+		switchBase.BackgroundColor3 = Color3.fromRGB(150, 150, 150)
+		switchBall:TweenPosition(UDim2.new(0, 1, 0, 1), "Out", "Quad", 0.2, true)
+		venderLabel.Text = "Vender: OFF"
+	end
 end
 
--- Botão de Comprar
-local botaoComprar = Instance.new("TextButton", mainFrame)
-botaoComprar.Size = UDim2.new(0, 240, 0, 40)
-botaoComprar.Position = UDim2.new(0, 10, 0, 190)
-botaoComprar.Text = "✅ Comprar Fruta Selecionada"
-botaoComprar.BackgroundColor3 = Color3.fromRGB(80, 150, 80)
-botaoComprar.TextColor3 = Color3.new(1, 1, 1)
-botaoComprar.Font = Enum.Font.GothamBold
-botaoComprar.TextScaled = true
-
-botaoComprar.MouseButton1Click:Connect(function()
-	if frutaSelecionada then
-		local rs = game:GetService("ReplicatedStorage")
-		local eventos = rs:WaitForChild("Eventos")
-		local remoteComprar = eventos:WaitForChild("ComprarSemente")
-		remoteComprar:FireServer(frutaSelecionada)
-	else
-		warn("Nenhuma fruta selecionada.")
+switchBase.InputBegan:Connect(function(input)
+	if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+		venderAtivo = not venderAtivo
+		atualizarSwitch()
 	end
 end)
 
--- Botão de Vender
-local botaoVender = Instance.new("TextButton", mainFrame)
-botaoVender.Size = UDim2.new(0, 240, 0, 40)
-botaoVender.Position = UDim2.new(0, 10, 0, 240)
-botaoVender.Text = "💰 Vender Tudo"
-botaoVender.BackgroundColor3 = Color3.fromRGB(180, 80, 80)
-botaoVender.TextColor3 = Color3.new(1, 1, 1)
-botaoVender.Font = Enum.Font.GothamBold
-botaoVender.TextScaled = true
-
-botaoVender.MouseButton1Click:Connect(function()
-	local rs = game:GetService("ReplicatedStorage")
-	local eventos = rs:WaitForChild("Eventos")
-	local remoteVender = eventos:WaitForChild("Vender"):WaitForChild("Vender inventário")
-	remoteVender:FireServer()
+task.spawn(function()
+	while true do
+		if venderAtivo then
+			VenderInventario:FireServer()
+		end
+		task.wait(2)
+	end
 end)
 
--- Botão de Toggle da GUI
-local toggleButton = Instance.new("TextButton", gui)
-toggleButton.Size = UDim2.new(0, 60, 0, 30)
-toggleButton.Position = UDim2.new(0, 290, 0.3, 0)
-toggleButton.Text = "GUI"
-toggleButton.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
-toggleButton.BackgroundTransparency = 0.2
-toggleButton.TextColor3 = Color3.new(1, 1, 1)
-toggleButton.Font = Enum.Font.GothamBold
-toggleButton.TextScaled = true
+atualizarSwitch()
 
-toggleButton.MouseButton1Click:Connect(function()
-	mainFrame.Visible = not mainFrame.Visible
+-- Botão Select Fruit
+local selectBtn = Instance.new("TextButton", mainFrame)
+selectBtn.Size = UDim2.new(0.5, -15, 0, 40)
+selectBtn.Position = UDim2.new(0.5, 5, 0, 10)
+selectBtn.Text = "Select Fruit"
+selectBtn.BackgroundColor3 = Color3.fromRGB(80, 80, 255)
+selectBtn.TextColor3 = Color3.new(1,1,1)
+
+-- Lista de frutas
+local listFrame = Instance.new("Frame", mainFrame)
+listFrame.Size = UDim2.new(1, -20, 0, 120)
+listFrame.Position = UDim2.new(0, 10, 0, 60)
+listFrame.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
+listFrame.Visible = false
+listFrame.ClipsDescendants = true
+
+local selectedFruit = nil
+
+for i, fruta in ipairs(frutasDisponiveis) do
+	local btn = Instance.new("TextButton", listFrame)
+	btn.Size = UDim2.new(1, 0, 0, 20)
+	btn.Position = UDim2.new(0, 0, 0, (i - 1) * 20)
+	btn.Text = fruta
+	btn.BackgroundColor3 = Color3.fromRGB(100, 100, 100)
+	btn.TextColor3 = Color3.new(1,1,1)
+	
+	btn.MouseButton1Click:Connect(function()
+		selectedFruit = fruta
+		selectBtn.Text = "Selecionado: " .. fruta
+		listFrame.Visible = false
+	end)
+end
+
+selectBtn.MouseButton1Click:Connect(function()
+	listFrame.Visible = not listFrame.Visible
+end)
+
+-- Botão Buy
+local buyBtn = Instance.new("TextButton", mainFrame)
+buyBtn.Size = UDim2.new(1, -20, 0, 40)
+buyBtn.Position = UDim2.new(0, 10, 1, -50)
+buyBtn.Text = "Buy"
+buyBtn.BackgroundColor3 = Color3.fromRGB(100, 255, 100)
+buyBtn.TextColor3 = Color3.new(0,0,0)
+
+buyBtn.MouseButton1Click:Connect(function()
+	if selectedFruit then
+		local args = {selectedFruit}
+		ComprarSemente:FireServer(unpack(args))
+	else
+		buyBtn.Text = "Selecione uma fruta"
+		wait(1.5)
+		buyBtn.Text = "Buy"
+	end
 end)
